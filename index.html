@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -389,7 +388,7 @@ async function api(endpoint, body = {}) {
 function showWarning(id, msg) {
   const el = document.getElementById(id);
   el.textContent = msg; el.style.display = "block";
-  if (id === "searchWarningBox") setTimeout(() => el.style.display = "none", 4000);
+  setTimeout(() => el.style.display = "none", 5000);
 }
 
 // 관리자: 로고(h1) 클릭으로 진입
@@ -624,7 +623,11 @@ function confirmLoad(ok, isNew = false) {
 // ── 답변 제출 ─────────────────────────────────────────────────
 async function submitAnswers() {
   const name = document.getElementById("nameInput").value.trim();
-  if (!name) return showWarning("searchWarningBox", "이름을 입력해주세요.");
+  if (!name) {
+    showWarning("answerWarningBox", "⚠️ 성함을 입력해주세요. 페이지 상단 이름 입력란을 채워주세요.");
+    document.getElementById("answerWarningBox").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   const unanswered = questionData.filter(q => answers[q.id] === undefined);
   if (unanswered.length) {
     showWarning("answerWarningBox",

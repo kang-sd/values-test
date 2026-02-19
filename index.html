@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -265,7 +267,7 @@
   <!-- 헤더 -->
   <div class="header">
     <div class="header-eyebrow">직업 가치관 정밀 분석</div>
-    <h1>Ax<span>ia</span></h1>
+    <h1 id="mainLogo" onclick="openAdmin()" style="cursor:default;">Ax<span>ia</span></h1>
     <div class="header-rule"></div>
     <div class="header-sub">당신이 일에서 진정으로 원하는 것을 발견하다</div>
   </div>
@@ -391,12 +393,7 @@ function showWarning(id, msg) {
   if (id === "searchWarningBox") setTimeout(() => el.style.display = "none", 4000);
 }
 
-// ── 키보드 'a' → 관리자 모드 ──────────────────────────────────
-document.addEventListener("keydown", e => {
-  // 입력 필드 포커스 중엔 무시
-  if (["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName)) return;
-  if (e.key === "a" || e.key === "A") openAdmin();
-});
+// 관리자: 로고(h1) 클릭으로 진입
 
 // ── 관리자 모달 열기/닫기 ─────────────────────────────────────
 function openAdmin() {
@@ -527,17 +524,30 @@ window.onload = async () => {
   document.getElementById("spinner").style.display    = "block";
   document.getElementById("valuesForm").style.display = "none";
   document.getElementById("submitWrap").style.display = "none";
+  let loadOk = false;
   try {
     const data = await api("getQuestions", {});
-    renderQuestions(data.questions || []);
+    const qs = data.questions || [];
+    if (qs.length === 0) throw new Error("문항 데이터가 없습니다. Firestore '문항시트' 컬렉션을 확인하세요.");
+    renderQuestions(qs);
+    loadOk = true;
   } catch (e) {
-    alert("문항 로드 실패: " + e.message);
+    document.getElementById("spinner").style.display = "none";
+    document.getElementById("valuesForm").innerHTML =
+      `<div style="text-align:center;padding:60px 0;color:#c0392b;font-size:14px;line-height:2;">
+        ⚠️ 문항을 불러오지 못했습니다.<br>
+        <span style="font-size:12px;color:#999;">${e.message}</span>
+      </div>`;
+    document.getElementById("valuesForm").style.display = "block";
+    return;
   } finally {
-    document.getElementById("spinner").style.display         = "none";
-    document.getElementById("valuesForm").style.display      = "block";
-    document.getElementById("submitWrap").style.display      = "block";
-    document.getElementById("progressWrap").style.display    = "block";
-    document.getElementById("questionsHeader").style.display = "flex";
+    if (loadOk) {
+      document.getElementById("spinner").style.display         = "none";
+      document.getElementById("valuesForm").style.display      = "block";
+      document.getElementById("submitWrap").style.display      = "block";
+      document.getElementById("progressWrap").style.display    = "block";
+      document.getElementById("questionsHeader").style.display = "flex";
+    }
   }
 };
 
@@ -753,6 +763,3 @@ function switchChart(type, btn) {
 </script>
 </body>
 </html>
-
-
-

@@ -314,6 +314,9 @@
 
   <!-- 진행 바 -->
   <div class="progress-wrap" id="progressWrap">
+    <div id="nameReminderBar" style="display:none; background:#fff8e1; border-left:3px solid #ffc107; color:#7c5c00; padding:8px 14px; font-size:13px; margin-bottom:8px; cursor:pointer;" onclick="document.getElementById('nameInput').focus(); document.querySelector('.name-section').scrollIntoView({behavior:'smooth'});">
+      ✏️ 성함을 입력해주세요 — 여기를 클릭하면 입력란으로 이동합니다
+    </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" id="progressFill"></div>
     </div>
@@ -519,6 +522,12 @@ async function adminDelete(docId, name) {
 
 // ── 페이지 로드 → 문항 불러오기 ──────────────────────────────
 window.onload = async () => {
+  // 이름 입력하면 reminder 즉시 숨김
+  document.getElementById("nameInput").addEventListener("input", () => {
+    if (document.getElementById("nameInput").value.trim()) {
+      document.getElementById("nameReminderBar").style.display = "none";
+    }
+  });
   document.getElementById("spinner").style.display    = "block";
   document.getElementById("valuesForm").style.display = "none";
   document.getElementById("submitWrap").style.display = "none";
@@ -583,6 +592,15 @@ function selectAnswer(qid, score, btn) {
   const total = questionData.length || 60;
   document.getElementById("progressFill").style.transform = `scaleX(${done/total})`;
   document.getElementById("progressText").textContent = `${done} / ${total}`;
+
+  // 이름 미입력 시 안내 표시, 입력하면 숨김
+  const nameVal = document.getElementById("nameInput").value.trim();
+  const reminder = document.getElementById("nameReminderBar");
+  if (!nameVal) {
+    reminder.style.display = "block";
+  } else {
+    reminder.style.display = "none";
+  }
 }
 
 // ── 이름 검색 ─────────────────────────────────────────────────

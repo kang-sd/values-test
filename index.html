@@ -495,24 +495,14 @@ async function loadAdminList() {
 // ── 관리자: 결과 보기 ─────────────────────────────────────────
 async function adminViewResult(docId) {
   try {
-    // adminGetResults에서 이미 받은 데이터를 다시 호출해 scores를 얻어 결과 렌더
     const data = await api("adminGetResults", { password: adminPassword });
     const item = (data.results || []).find(r => r.id === docId);
     if (!item) { alert("해당 데이터를 찾을 수 없습니다."); return; }
     closeAdmin();
-    // scores로 결과 구성
-    const result = await buildClientResult(item.scores);
-    renderResult(result);
+    // 서버에 scores를 보내 설명 포함 결과 받기
+    const res = await api("getResultByScores", { scores: item.scores });
+    renderResult(res.result);
   } catch(e) { alert("오류: " + e.message); }
-}
-
-// 클라이언트에서 scores로 결과 배열 구성 (설명은 서버에 이미 없으니 점수만)
-async function buildClientResult(scores) {
-  // saveAnswers를 다시 호출하지 않고, 점수만으로 간단 배열 반환
-  return Object.entries(scores).map(([type, score]) => ({
-    가치유형: type, 점수: score,
-    평가:"", 자기개발팁:"", 성장팁:"", 강점:"", 약점:""
-  }));
 }
 
 // ── 관리자: 삭제 ─────────────────────────────────────────────

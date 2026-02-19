@@ -1,419 +1,589 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>가치관 검사</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <title>AXIA · 가치관 분석</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Serif+KR:wght@300;400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
-    body {
-      font-family: 'Noto Sans KR', sans-serif;
-      padding: 16px;
-      max-width: 900px;
-      margin: auto;
-      background-color: #f7fbff;
+    :root {
+      --bg:      #f9f6f1;
+      --surface: #ffffff;
+      --ink:     #1c1712;
+      --ink2:    #4e4840;
+      --teal:    #2e7d6e;
+      --teal2:   #4aad98;
+      --teal-bg: #eef8f6;
+      --border:  #e4ddd4;
+      --accent:  #1a5c52;
     }
-    h2 {
-      color: #0050a0;
-      text-align: center;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--ink); font-family: 'Noto Serif KR', serif; min-height: 100vh; }
+
+    .top-bar { height: 4px; background: linear-gradient(90deg, var(--teal), var(--teal2), var(--teal)); }
+    .container { max-width: 780px; margin: 0 auto; padding: 0 24px 80px; }
+
+    /* 헤더 */
+    .header { text-align: center; padding: 52px 0 44px; animation: fadeDown 0.8s ease both; }
+    .header-eyebrow { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: var(--teal); margin-bottom: 18px; }
+    .header h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(48px, 10vw, 84px); font-weight: 300; font-style: italic; color: var(--ink); line-height: 0.95; letter-spacing: -2px; }
+    .header h1 span { color: var(--teal); }
+    .header-rule { width: 50px; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); margin: 22px auto 18px; }
+    .header-sub { font-size: 13px; color: var(--ink2); }
+
+    /* 안내 카드 */
+    .intro-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 44px; animation: fadeUp 0.8s 0.2s ease both; }
+    .intro-card { background: var(--surface); padding: 24px 18px; text-align: center; }
+    .intro-card-num { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; color: var(--teal); line-height: 1; margin-bottom: 6px; }
+    .intro-card-title { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+    .intro-card p { font-size: 12px; color: var(--ink2); line-height: 1.6; }
+
+    /* 이름 입력 */
+    .name-section { margin-bottom: 36px; animation: fadeUp 0.8s 0.3s ease both; }
+    .section-label { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--teal); margin-bottom: 10px; }
+    .name-row { display: flex; gap: 10px; }
+    .name-input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--ink); font-family: 'Noto Serif KR', serif; font-size: 16px; padding: 14px 18px; outline: none; transition: border-color 0.25s; }
+    .name-input:focus { border-color: var(--teal); }
+    .name-input::placeholder { color: #bbb; }
+    .btn-search { background: var(--surface); border: 1px solid var(--teal); color: var(--teal); font-family: 'Cormorant Garamond', serif; font-size: 15px; letter-spacing: 2px; padding: 14px 26px; cursor: pointer; transition: all 0.25s; white-space: nowrap; }
+    .btn-search:hover { background: var(--teal); color: #fff; }
+
+    /* 확인 다이얼로그 */
+    .confirm-box { background: var(--teal-bg); border: 1px solid rgba(46,125,110,0.3); padding: 22px 24px; margin-bottom: 28px; animation: fadeUp 0.3s ease; }
+    .confirm-box p { font-size: 15px; color: var(--ink); margin-bottom: 16px; line-height: 1.7; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .btn-yes { background: var(--teal); border: none; color: #fff; font-family: 'Noto Serif KR', serif; font-size: 14px; padding: 11px 26px; cursor: pointer; transition: opacity 0.2s; }
+    .btn-yes:hover { opacity: 0.85; }
+    .btn-no  { background: transparent; border: 1px solid var(--border); color: var(--ink2); font-family: 'Noto Serif KR', serif; font-size: 14px; padding: 11px 26px; cursor: pointer; transition: all 0.2s; }
+    .btn-no:hover { border-color: var(--ink2); color: var(--ink); }
+
+    /* 진행 바 */
+    .progress-wrap { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 10px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 8px; display: none; }
+    .progress-bar-bg { height: 2px; background: var(--border); position: relative; }
+    .progress-bar-fill { position: absolute; inset: 0; background: linear-gradient(90deg, var(--teal), var(--teal2)); transform-origin: left; transform: scaleX(0); transition: transform 0.3s ease; }
+    .progress-text { font-size: 11px; letter-spacing: 1px; color: var(--ink2); text-align: right; margin-top: 6px; }
+
+    /* 문항 구분선 */
+    .questions-header { display: none; align-items: center; gap: 18px; margin-bottom: 8px; }
+    .questions-header-line { flex: 1; height: 1px; background: var(--border); }
+    .questions-header-text { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--teal); }
+
+    /* 문항 */
+    #valuesForm { animation: fadeUp 0.8s 0.4s ease both; }
+    .question { border-bottom: 1px solid var(--border); padding: 24px 0; }
+    .question:last-child { border-bottom: none; }
+    .q-meta { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+    .q-num { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--teal); min-width: 28px; opacity: 0.6; }
+    .q-text { font-size: 15px; color: var(--ink); line-height: 1.65; }
+    .q-choices { display: flex; gap: 10px; padding-left: 40px; flex-wrap: wrap; }
+    .btn-choice { background: var(--surface); border: 1px solid var(--border); color: var(--ink2); font-family: 'Noto Serif KR', serif; font-size: 14px; padding: 11px 22px; cursor: pointer; transition: all 0.2s; }
+    .btn-choice:hover { border-color: var(--teal2); color: var(--ink); background: var(--teal-bg); }
+    .btn-choice.selected { background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 600; }
+
+    /* 경고 */
+    .warning-bar { background: #fff5f5; border-left: 3px solid #e05252; color: #b83232; padding: 12px 18px; font-size: 13px; margin: 12px 0; display: none; line-height: 1.6; }
+
+    /* 제출 버튼 */
+    .submit-wrap { padding: 40px 0 0; text-align: center; }
+    .btn-submit { background: var(--teal); border: none; color: #fff; font-family: 'Cormorant Garamond', serif; font-size: 18px; letter-spacing: 3px; padding: 18px 60px; cursor: pointer; width: 100%; max-width: 380px; transition: background 0.25s, transform 0.15s; }
+    .btn-submit:hover { background: var(--accent); transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* 스피너 */
+    #spinner { display: none; text-align: center; padding: 60px 0; }
+    .spinner-ring { width: 44px; height: 44px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 14px; }
+    .spinner-text { font-size: 12px; letter-spacing: 2px; color: var(--ink2); text-transform: uppercase; }
+
+    /* ══ 결과 섹션 ══ */
+    #resultSection { display: none; animation: fadeUp 0.7s ease both; }
+    .result-header { text-align: center; padding: 56px 0 44px; border-bottom: 1px solid var(--border); margin-bottom: 44px; }
+    .result-eyebrow { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: var(--teal); margin-bottom: 22px; }
+    .result-top3 { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px; }
+    .top3-badge { text-align: center; }
+    .top3-rank { font-family: 'Cormorant Garamond', serif; font-size: 11px; color: var(--teal); opacity: 0.7; margin-bottom: 6px; letter-spacing: 2px; }
+    .top3-name { font-family: 'Cormorant Garamond', serif; font-size: clamp(22px,5vw,36px); font-weight: 300; color: var(--ink); }
+    .top3-name.rank1 { font-size: clamp(32px,8vw,56px); color: var(--teal); font-style: italic; }
+    .top3-score { font-size: 11px; color: var(--ink2); margin-top: 4px; letter-spacing: 1px; }
+    .result-divider { width: 1px; height: 60px; background: var(--border); margin: auto 8px; }
+    .result-subtitle { font-size: 13px; color: var(--ink2); font-style: italic; line-height: 1.8; }
+
+    /* 차트 */
+    .chart-section { background: var(--surface); border: 1px solid var(--border); padding: 28px 28px 24px; margin-bottom: 40px; }
+    .chart-title { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--teal); margin-bottom: 16px; text-align: center; }
+    .chart-tabs { display: flex; margin-bottom: 20px; border: 1px solid var(--border); }
+    .chart-tab { flex: 1; padding: 9px; font-size: 12px; letter-spacing: 1px; text-align: center; cursor: pointer; font-family: 'Noto Serif KR', serif; color: var(--ink2); background: var(--surface); border: none; transition: all 0.2s; }
+    .chart-tab.active { background: var(--teal); color: #fff; }
+
+    /* 점수 상세 테이블 */
+    .score-table-wrap { margin-bottom: 40px; border: 1px solid var(--border); background: var(--surface); overflow: hidden; }
+    .score-table-title { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--teal); padding: 16px 20px 12px; border-bottom: 1px solid var(--border); background: var(--teal-bg); }
+    .score-row { display: grid; grid-template-columns: 110px 1fr 60px; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+    .score-row:last-child { border-bottom: none; }
+    .score-row.rank1 { background: rgba(46,125,110,0.05); }
+    .score-row.rank1 .score-type { color: var(--teal); font-weight: 600; }
+    .score-type { font-size: 14px; color: var(--ink2); }
+    .score-bar-bg { height: 4px; background: var(--border); border-radius: 2px; position: relative; overflow: hidden; }
+    .score-bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--teal), var(--teal2)); transition: width 1s ease; }
+    .score-val { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--ink); text-align: right; }
+    .score-val.rank1 { color: var(--teal); }
+
+    /* 결과 상세 */
+    .result-fields { border: 1px solid var(--border); margin-bottom: 40px; background: var(--surface); }
+    .field-section-title { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--teal); padding: 16px 20px 12px; border-bottom: 1px solid var(--border); background: var(--teal-bg); }
+    .field-row { display: grid; grid-template-columns: 130px 1fr; border-bottom: 1px solid var(--border); }
+    .field-row:last-child { border-bottom: none; }
+    .field-key { padding: 16px 16px 16px 20px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); background: var(--teal-bg); border-right: 1px solid var(--border); display: flex; align-items: flex-start; padding-top: 18px; line-height: 1.6; }
+    .field-val { padding: 16px 20px; font-size: 14px; color: var(--ink2); line-height: 1.85; }
+
+    /* 버튼 */
+    .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-print { background: var(--teal); border: none; color: #fff; font-family: 'Noto Serif KR', serif; font-size: 15px; padding: 16px 36px; cursor: pointer; transition: background 0.2s, transform 0.15s; display: flex; align-items: center; gap: 8px; }
+    .btn-print:hover { background: var(--accent); transform: translateY(-1px); }
+    .btn-restart { background: var(--surface); border: 1px solid var(--border); color: var(--ink2); font-family: 'Noto Serif KR', serif; font-size: 15px; padding: 16px 36px; cursor: pointer; transition: all 0.2s; }
+    .btn-restart:hover { border-color: var(--ink); color: var(--ink); }
+
+    /* 애니메이션 */
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(16px);  } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin     { to { transform: rotate(360deg); } }
+
+    /* 인쇄 */
+    @media print {
+      .top-bar,.header,.intro-cards,.name-section,
+      .progress-wrap,.questions-header,#valuesForm,
+      .warning-bar,.submit-wrap,#spinner,
+      #searchResponse,#searchWarningBox,#answerWarningBox,
+      .result-actions,.chart-tabs { display: none !important; }
+      body { background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .container { max-width:100%; padding:0 16px; }
+      #resultSection { display:block !important; }
+      .print-only-header { display:flex !important; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:2px solid #2e7d6e; margin-bottom:0; }
+      .print-only-header .brand { font-family:'Cormorant Garamond',serif; font-size:18pt; font-style:italic; color:#2e7d6e; }
+      .print-only-header .print-date { font-size:9pt; color:#888; }
+      .score-bar-fill { -webkit-print-color-adjust:exact; }
     }
-    .question {
-      margin-bottom: 24px;
-      padding: 12px;
-      border-bottom: 1px solid #ccc;
-      font-size: 18px;
-    }
-    .btn-choice {
-      display: inline-block;
-      margin-right: 10px;
-      padding: 12px 24px;
-      font-size: 16px;
-      background-color: #f0f0f0;
-      border: 1px solid #bbb;
-      border-radius: 6px;
-      cursor: pointer;
-      color: black;
-    }
-    .btn-choice.selected {
-      background-color: #007BFF;
-      color: white;
-      border-color: #007BFF;
-    }
-    input[type="text"], button {
-      font-size: 18px;
-      padding: 10px;
-    }
-    button {
-      background-color: #2d7ff9;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #115fd3;
-    }
-    .warning {
-      background-color: #ffdddd;
-      color: #a00;
-      padding: 12px;
-      border: 1px solid #a00;
-      border-radius: 5px;
-      margin: 10px 0;
-      display: none;
-    }
-    .btn-submit {
-      display: block;
-      width: 100%;
-      font-size: 20px;
-      padding: 16px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      margin: 30px 0 10px;
-    }
-    .btn-submit:hover {
-      background-color: #218838;
-    }
-    .loading {
-      text-align: center;
-      font-size: 18px;
-      color: #555;
-      padding: 20px;
-    }
+
+    /* 반응형 */
     @media (max-width: 600px) {
-      .btn-choice {
-        padding: 14px 18px;
-        font-size: 18px;
-        display: block;
-        width: 100%;
-        margin-bottom: 10px;
-      }
-      input[type="text"], button {
-        width: 100%;
-      }
+      .intro-cards { grid-template-columns: repeat(2,1fr); }
+      .q-choices { padding-left:0; flex-direction:column; }
+      .btn-choice { width:100%; }
+      .field-row { grid-template-columns:1fr; }
+      .field-key { border-right:none; border-bottom:1px solid var(--border); }
+      .result-divider { display:none; }
+      .score-row { grid-template-columns: 90px 1fr 50px; gap:10px; }
     }
   </style>
 </head>
-
 <body>
-<h2>가치관 검사</h2>
 
-<!-- 검사 설명 박스 -->
-<div style="background-color: #f0f8ff; border-left: 6px solid #007BFF; padding: 16px; margin-bottom: 20px; border-radius: 8px;">
-  <strong style="font-size: 18px; color: #0050a0;">💡 가치관 검사란?</strong><br>
-  개인이 중요하게 여기는 <strong>12가지 직업 가치유형</strong>을 진단하여,<br>
-  유형별 점수, 평가, 자기개발 팁, 성장 팁, 강점, 약점을 제공합니다.<br>
-  결과는 <strong style="color: #0050a0;">레이더 차트</strong> 및 <strong style="color: #0050a0;">막대그래프</strong>로 시각화됩니다.
-</div>
+<div class="top-bar"></div>
+<div class="container">
 
-<div style="background-color: #f8f9fa; border-left: 6px solid #6c757d; padding: 16px; margin-bottom: 30px; border-radius: 8px;">
-  <strong style="font-size: 16px; color: #333;">🔍 검사 유의사항</strong><br>
-  - 본 검사는 유효한 결과를 위해 <strong>60문항</strong>으로 구성합니다<br>
-  - 결과는 <strong>3일간 보관</strong>되며 자동 삭제됩니다<br>
-  - 기존 검사자는 <strong>이름 검색</strong>으로 결과 확인 가능합니다.
-</div>
-
-<!-- 경고 메시지 박스 -->
-<div id="warningBox" class="warning"><span id="warningText"></span></div>
-
-<!-- 이름 입력 -->
-<p>
-  이름: <input type="text" id="nameInput" placeholder="이름을 입력하세요" autocomplete="off">
-  <button onclick="searchPrevious()">검색</button>
-</p>
-
-<div id="searchResponse"></div>
-<div id="loadingBox" class="loading" style="display:none;">⏳ 불러오는 중...</div>
-
-<!-- 문항 출력 폼 -->
-<form id="questionForm"></form>
-
-<!-- 결과보기 버튼 -->
-<button class="btn-submit" onclick="submitAnswers()">결과 보기</button>
-
-<!-- 문항 경고 -->
-<div id="questionWarningBox" class="warning" style="display:none;">
-  <span id="questionWarningText"></span>
-</div>
-
-<!-- 결과 보고서 영역 -->
-<div class="result-box" id="resultSection" style="display:none">
-  <h3>결과 보고서</h3>
-  <table id="resultTable" border="1" style="width:100%; border-collapse:collapse;"></table>
-  <br>
-  <div style="text-align: left; margin-bottom: 10px;">
-    <label for="chartType" style="font-size: 18px; margin-right: 10px;">그래프 선택:</label>
-    <select id="chartType" onchange="changeChartType()" style="font-size: 18px; padding: 5px 10px;">
-      <option value="radar">다각형(레이더차트)</option>
-      <option value="bar">막대그래프</option>
-    </select>
+  <div class="print-only-header" style="display:none;">
+    <div class="brand">Axia · 가치관분석</div>
+    <div class="print-date" id="printDate"></div>
   </div>
-  <div style="position: relative; width: 80%; margin: auto;">
-    <canvas id="radarChart" style="width:100%; height:260px; background-color:white; display:block;"></canvas>
-    <canvas id="barChart"   style="width:100%; height:260px; background-color:white; display:none;"></canvas>
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-eyebrow">직업 가치관 정밀 분석</div>
+    <h1>Ax<span>ia</span></h1>
+    <div class="header-rule"></div>
+    <div class="header-sub">당신이 일에서 진정으로 원하는 것을 발견하다</div>
   </div>
-  <br><br>
-  <button onclick="location.reload()">🔁 나가기</button>
+
+  <!-- 안내 카드 -->
+  <div class="intro-cards">
+    <div class="intro-card">
+      <div class="intro-card-num">60</div>
+      <div class="intro-card-title">문항 구성</div>
+      <p>정밀한 결과를 위해<br>설계된 60개 문항</p>
+    </div>
+    <div class="intro-card">
+      <div class="intro-card-num">12</div>
+      <div class="intro-card-title">가치 유형</div>
+      <p>직업 가치유형별<br>심층 분석 및 조언</p>
+    </div>
+    <div class="intro-card">
+      <div class="intro-card-num">3</div>
+      <div class="intro-card-title">일 보관</div>
+      <p>이름 검색으로<br>3일 이내 재확인 가능</p>
+    </div>
+    <div class="intro-card">
+      <div class="intro-card-num">∞</div>
+      <div class="intro-card-title">시각화</div>
+      <p>12가지 점수를<br>그래프로 한눈에</p>
+    </div>
+  </div>
+
+  <!-- 이름 입력 -->
+  <div class="name-section">
+    <div class="section-label">이름 입력</div>
+    <div class="name-row">
+      <input class="name-input" type="text" id="nameInput" placeholder="성함을 입력하세요" autocomplete="off">
+      <button class="btn-search" onclick="searchPrevious()">검색</button>
+    </div>
+  </div>
+
+  <div class="warning-bar" id="searchWarningBox"></div>
+  <div id="searchResponse"></div>
+
+  <!-- 스피너 -->
+  <div id="spinner">
+    <div class="spinner-ring"></div>
+    <div class="spinner-text">문항 불러오는 중</div>
+  </div>
+
+  <!-- 진행 바 -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-text" id="progressText">0 / 60</div>
+  </div>
+
+  <!-- 문항 구분선 -->
+  <div class="questions-header" id="questionsHeader">
+    <div class="questions-header-line"></div>
+    <div class="questions-header-text">검사 문항</div>
+    <div class="questions-header-line"></div>
+  </div>
+
+  <!-- 문항 폼 -->
+  <form id="valuesForm"></form>
+
+  <div class="warning-bar" id="answerWarningBox"></div>
+
+  <div class="submit-wrap" id="submitWrap">
+    <button class="btn-submit" id="submitBtn" onclick="submitAnswers()">결과 보기</button>
+  </div>
+
+  <!-- ══ 결과 섹션 ══ -->
+  <div id="resultSection">
+
+    <div class="result-header">
+      <div class="result-eyebrow">당신의 직업 가치관 프로필</div>
+      <div class="result-top3" id="top3Display"></div>
+      <div class="result-subtitle" id="resultSubtitle"></div>
+    </div>
+
+    <!-- 차트 -->
+    <div class="chart-section">
+      <div class="chart-title">가치유형별 점수 비교</div>
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="switchChart('radar',this)">레이더 차트</button>
+        <button class="chart-tab" onclick="switchChart('bar',this)">막대 그래프</button>
+      </div>
+      <canvas id="valuesChart"></canvas>
+    </div>
+
+    <!-- 점수 상세 -->
+    <div class="score-table-wrap">
+      <div class="score-table-title">전체 가치유형 점수</div>
+      <div id="scoreRows"></div>
+    </div>
+
+    <!-- 상세 설명 (TOP3) -->
+    <div class="result-fields" id="resultFields"></div>
+
+    <div class="result-actions">
+      <button class="btn-print" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+      <button class="btn-restart" onclick="location.reload()">처음으로 돌아가기</button>
+    </div>
+
+  </div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════════════════
-// Firebase Functions 엔드포인트 (배포 후 자동 생성된 URL로 교체)
-// 형식: https://us-central1-values-test-31b59.cloudfunctions.net/함수명
-// ════════════════════════════════════════════════════════════
 const BASE_URL = "https://us-central1-values-test-31b59.cloudfunctions.net";
+let questionData = [], answers = {}, lastSearchResult = null, chartInst = null, currentChartType = "radar";
 
-let questions = [], answers = {}, lastSearchResult = null, currentUserName = "";
-let radarChartObj = null, barChartObj = null;
-
-// ── API 헬퍼 ──────────────────────────────────────────────
-async function apiPost(endpoint, body = {}) {
-  const res = await fetch(`${BASE_URL}/${endpoint}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+// ── API ───────────────────────────────────────────────────────
+async function api(endpoint, body = {}) {
+  const r = await fetch(`${BASE_URL}/${endpoint}`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
-  if (!res.ok) throw new Error(`API 오류: ${res.status}`);
-  return res.json();
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || "서버 오류");
+  return d;
 }
 
-// ── 페이지 로드 시 문항 불러오기 ────────────────────────────
+function showWarning(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = "block";
+  if (id === "searchWarningBox") setTimeout(() => el.style.display = "none", 4000);
+}
+
+// ── 스피너 / 폼 토글 ─────────────────────────────────────────
+function setSpinner(on) {
+  document.getElementById("spinner").style.display = on ? "block" : "none";
+  document.getElementById("valuesForm").style.display = on ? "none" : "block";
+  document.getElementById("submitWrap").style.display = on ? "none" : "block";
+  if (!on) {
+    document.getElementById("progressWrap").style.display    = "block";
+    document.getElementById("questionsHeader").style.display = "flex";
+  }
+}
+
+// ── 진행 바 ──────────────────────────────────────────────────
+function updateProgress() {
+  const done = Object.keys(answers).length;
+  const total = questionData.length || 60;
+  document.getElementById("progressFill").style.transform = `scaleX(${done / total})`;
+  document.getElementById("progressText").textContent = `${done} / ${total}`;
+}
+
+// ── 페이지 로드 → 문항 불러오기 ──────────────────────────────
 window.onload = async () => {
-  showLoading(true);
+  // 로딩 중: 스피너 표시, 폼 숨김
+  document.getElementById("spinner").style.display    = "block";
+  document.getElementById("valuesForm").style.display = "none";
+  document.getElementById("submitWrap").style.display = "none";
   try {
-    const data = await fetch(`${BASE_URL}/getQuestions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(r => r.json());
+    const data = await api("getQuestions", {});
     renderQuestions(data.questions || []);
   } catch (e) {
-    showWarning("문항을 불러오지 못했습니다: " + e.message);
+    alert("문항 로드 실패: " + e.message);
   } finally {
-    showLoading(false);
+    // 로딩 완료: 스피너 숨김, 문항·진행바·버튼 표시
+    document.getElementById("spinner").style.display         = "none";
+    document.getElementById("valuesForm").style.display      = "block";
+    document.getElementById("submitWrap").style.display      = "block";
+    document.getElementById("progressWrap").style.display    = "block";
+    document.getElementById("questionsHeader").style.display = "flex";
   }
 };
 
-// ── 이름 검색 ────────────────────────────────────────────
-async function searchPrevious() {
-  const name = document.getElementById("nameInput").value.trim();
-  if (!name) return showWarning("이름을 입력해주세요.");
-  currentUserName = name;
-
-  showLoading(true);
-  try {
-    const data = await apiPost("getUserResult", { name });
-    lastSearchResult = data.found ? data.result : null;
-    const box = document.getElementById("searchResponse");
-
-    if (data.found) {
-      box.innerHTML = `
-        <div class='confirm-box'>
-          이전에 검사를 했습니다. 결과를 보시겠습니까?<br>
-          <button onclick='confirmLoadResult(true)'>예</button>
-          <button onclick='confirmLoadResult(false)'>아니오</button>
-        </div>`;
-    } else {
-      box.innerHTML = `
-        <div class='confirm-box'>
-          검사를 진행하시겠습니까?<br>
-          <button onclick='confirmLoadResult(true, true)'>예</button>
-          <button onclick='confirmLoadResult(false)'>아니오</button>
-        </div>`;
-    }
-  } catch (e) {
-    showWarning("검색 중 오류: " + e.message);
-  } finally {
-    showLoading(false);
-  }
-}
-
-// ── 검색 결과 확인 ───────────────────────────────────────
-function confirmLoadResult(ok, isNew = false) {
-  const responseBox = document.getElementById("searchResponse");
-  if (ok && lastSearchResult) {
-    responseBox.innerHTML = "";
-    renderResult(lastSearchResult);
-    document.getElementById("resultSection").scrollIntoView({ behavior: 'smooth' });
-  } else if (ok && isNew) {
-    responseBox.innerHTML = "";
-    document.getElementById("warningBox").style.display = "none";
-  } else {
-    location.reload();
-  }
-}
-
-// ── 문항 렌더링 ──────────────────────────────────────────
+// ── 문항 렌더링 ───────────────────────────────────────────────
 function renderQuestions(data) {
-  questions = data;
-  const form = document.getElementById("questionForm");
+  questionData = data;
+  const form = document.getElementById("valuesForm");
   form.innerHTML = "";
   data.forEach((q, i) => {
     const div = document.createElement("div");
     div.className = "question";
-    let html = `<p>${i + 1}. ${q.text}</p>`;
+    let choicesHtml = "";
     for (let j = 1; j <= 5; j++) {
       const label = q[`select${j}`];
       const score = q[`score${j}`];
       if (!label) continue;
-      html += `<button type='button' class='btn-choice' onclick='selectAnswer("${q.id}", ${score}, this)'>${label}</button>`;
+      choicesHtml += `<button type="button" class="btn-choice" onclick="selectAnswer('${q.id}',${score},this)">${label}</button>`;
     }
-    div.innerHTML = html;
+    div.innerHTML = `
+      <div class="q-meta">
+        <div class="q-num">${String(i+1).padStart(2,"0")}</div>
+        <div class="q-text">${q.text}</div>
+      </div>
+      <div class="q-choices">${choicesHtml}</div>`;
     form.appendChild(div);
   });
 }
 
-// ── 답변 선택 ────────────────────────────────────────────
+// ── 답변 선택 ─────────────────────────────────────────────────
 function selectAnswer(qid, score, btn) {
   answers[qid] = score;
-  const group = btn.parentElement.querySelectorAll(".btn-choice");
-  group.forEach(b => b.classList.remove("selected"));
+  btn.closest(".q-choices").querySelectorAll(".btn-choice").forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
+  updateProgress();
 }
 
-// ── 답변 제출 ────────────────────────────────────────────
+// ── 이름 검색 ─────────────────────────────────────────────────
+async function searchPrevious() {
+  const name = document.getElementById("nameInput").value.trim();
+  if (!name) return showWarning("searchWarningBox", "이름을 입력해주세요.");
+  const box = document.getElementById("searchResponse");
+  box.innerHTML = `<div style="font-size:13px;color:var(--ink2);padding:10px 0;">검색 중…</div>`;
+  try {
+    const data = await api("getUserResult", { name });
+    lastSearchResult = data.found ? data.result : null;
+    if (data.found) {
+      box.innerHTML = `<div class="confirm-box">
+        <p>이전 검사 기록이 있습니다. 결과를 바로 보시겠습니까?</p>
+        <div class="confirm-btns">
+          <button class="btn-yes" onclick="confirmLoad(true)">예, 결과 보기</button>
+          <button class="btn-no"  onclick="confirmLoad(false)">새로 검사하기</button>
+        </div></div>`;
+    } else {
+      box.innerHTML = `<div class="confirm-box">
+        <p>기존 기록이 없습니다. 지금 바로 검사를 시작하시겠습니까?</p>
+        <div class="confirm-btns">
+          <button class="btn-yes" onclick="confirmLoad(true,true)">예, 시작하기</button>
+          <button class="btn-no"  onclick="confirmLoad(false)">취소</button>
+        </div></div>`;
+    }
+  } catch(e) {
+    box.innerHTML = `<div style="color:#e05252;font-size:13px;padding:10px 0;">오류: ${e.message}</div>`;
+  }
+}
+
+// ── 검색 결과 확인 ────────────────────────────────────────────
+function confirmLoad(ok, isNew = false) {
+  document.getElementById("searchResponse").innerHTML = "";
+  if (ok && lastSearchResult) renderResult(lastSearchResult);
+  else if (!ok) location.reload();
+  // isNew = true 이면 그냥 닫고 검사 진행
+}
+
+// ── 답변 제출 ─────────────────────────────────────────────────
 async function submitAnswers() {
   const name = document.getElementById("nameInput").value.trim();
-  if (!name) return showWarning("이름을 입력해주세요.");
-  currentUserName = name;
-
-  const unanswered = questions.filter(q => answers[q.id] === undefined);
+  if (!name) return showWarning("searchWarningBox", "이름을 입력해주세요.");
+  const unanswered = questionData.filter(q => answers[q.id] === undefined);
   if (unanswered.length) {
-    const missing = unanswered.map(q => q.id).join(", ");
-    showWarning(`다음 문항이 입력되지 않았습니다: ${missing}. 문항을 모두 입력해야 결과를 확인할 수 있습니다.`);
+    showWarning("answerWarningBox",
+      `${unanswered.length}개 문항이 선택되지 않았습니다: ${unanswered.map(q=>q.id).join(", ")}`);
     return;
   }
-
-  document.getElementById("questionWarningBox").style.display = "none";
-  showLoading(true);
-
+  document.getElementById("answerWarningBox").style.display = "none";
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true; btn.textContent = "분석 중…";
   try {
-    const data = await apiPost("saveAnswers", { name, answers });
+    const data = await api("saveAnswers", { name, answers });
     renderResult(data.result);
-    setTimeout(() => {
-      document.getElementById("resultSection").scrollIntoView({ behavior: 'smooth' });
-    }, 300);
-  } catch (e) {
-    showWarning("제출 중 오류: " + e.message);
-  } finally {
-    showLoading(false);
+  } catch(e) {
+    alert("오류: " + e.message);
+    btn.disabled = false; btn.textContent = "결과 보기";
   }
 }
 
-// ── 경고 표시 ────────────────────────────────────────────
-function showWarning(msg) {
-  const box = document.getElementById("warningBox");
-  document.getElementById("warningText").textContent = msg;
-  box.style.display = "block";
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function showLoading(show) {
-  document.getElementById("loadingBox").style.display = show ? "block" : "none";
-}
-
-// ── 결과 렌더링 ──────────────────────────────────────────
+// ── 결과 렌더링 ───────────────────────────────────────────────
 function renderResult(result) {
-  if (!result || !Array.isArray(result)) return showWarning("결과 데이터가 없습니다.");
+  if (!result || !Array.isArray(result)) { alert("결과 데이터가 없습니다."); return; }
+
+  // 폼 영역 숨기기
+  ["valuesForm","submitWrap","progressWrap","questionsHeader"].forEach(id => {
+    document.getElementById(id).style.display = "none";
+  });
+  document.querySelector(".intro-cards").style.display = "none";
+  document.querySelector(".name-section").style.display = "none";
+  document.getElementById("searchResponse").innerHTML = "";
+
+  // 인쇄 날짜
+  const now = new Date();
+  document.getElementById("printDate").textContent =
+    `${now.getFullYear()}. ${now.getMonth()+1}. ${now.getDate()} 출력`;
+
+  // 점수 내림차순 정렬
+  const sorted = [...result].sort((a,b) => b.점수 - a.점수);
+  const top3 = sorted.slice(0, 3);
+
+  // TOP3 표시
+  const top3El = document.getElementById("top3Display");
+  top3El.innerHTML = top3.map((item, i) => `
+    ${i > 0 ? '<div class="result-divider"></div>' : ''}
+    <div class="top3-badge">
+      <div class="top3-rank">${["1st","2nd","3rd"][i]}</div>
+      <div class="top3-name${i===0?' rank1':''}">${item.가치유형}</div>
+      <div class="top3-score">${item.점수}점</div>
+    </div>`).join("");
+
+  document.getElementById("resultSubtitle").textContent =
+    `${top3[0].가치유형} · ${top3[1].가치유형} · ${top3[2].가치유형}을 중심으로 한 직업 가치관 프로필`;
+
+  // 차트
+  drawChart(result, currentChartType);
+
+  // 점수 바 테이블
+  const scoreRowsEl = document.getElementById("scoreRows");
+  scoreRowsEl.innerHTML = sorted.map((row, i) => `
+    <div class="score-row${i===0?' rank1':''}">
+      <div class="score-type">${i<3?['①','②','③'][i]+' ':''}${row.가치유형}</div>
+      <div>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" style="width:${(row.점수/30)*100}%"></div>
+        </div>
+      </div>
+      <div class="score-val${i===0?' rank1':''}">${row.점수}</div>
+    </div>`).join("");
+
+  // TOP3 상세 설명
+  const fieldsEl = document.getElementById("resultFields");
+  fieldsEl.innerHTML = top3.map(row => `
+    <div class="field-section-title">${row.가치유형} 유형 상세</div>
+    <div class="field-row"><div class="field-key">평가</div><div class="field-val">${row.평가||"–"}</div></div>
+    <div class="field-row"><div class="field-key">자기개발 팁</div><div class="field-val">${row.자기개발팁||"–"}</div></div>
+    <div class="field-row"><div class="field-key">성장 팁</div><div class="field-val">${row.성장팁||"–"}</div></div>
+    <div class="field-row"><div class="field-key">강점</div><div class="field-val">${row.강점||"–"}</div></div>
+    <div class="field-row"><div class="field-key">약점</div><div class="field-val">${row.약점||"–"}</div></div>
+  `).join("");
+
   document.getElementById("resultSection").style.display = "block";
-  const table = document.getElementById("resultTable");
-
-  let html = `
-    <tr>
-      <th style="width:7%;  text-align:center;">가치유형</th>
-      <th style="width:5%;  text-align:center;">점수</th>
-      <th style="width:22%; text-align:center;">평가</th>
-      <th style="width:22%;">자기개발 팁</th>
-      <th style="width:22%;">성장 팁</th>
-      <th style="width:22%;">강점/약점</th>
-    </tr>`;
-
-  const labels = [], scores = [];
-  result.forEach(row => {
-    html += `
-      <tr>
-        <td style="text-align:center;">${row.가치유형}</td>
-        <td style="text-align:center;">${row.점수}</td>
-        <td>${row.평가}</td>
-        <td>${row.자기개발팁}</td>
-        <td>${row.성장팁}</td>
-        <td>${row.강점} / ${row.약점}</td>
-      </tr>`;
-    labels.push(row.가치유형);
-    scores.push(row.점수);
-  });
-
-  table.innerHTML = html;
-  drawRadar(labels, scores);
-  drawBar(labels, scores);
+  setTimeout(() => document.getElementById("resultSection").scrollIntoView({ behavior:"smooth" }), 100);
 }
 
-// ── 레이더 차트 ──────────────────────────────────────────
-function drawRadar(labels, scores) {
-  if (radarChartObj) radarChartObj.destroy();
-  const ctx = document.getElementById("radarChart").getContext("2d");
-  radarChartObj = new Chart(ctx, {
-    type: 'radar',
-    data: {
-      labels,
-      datasets: [{
-        label: "가치 점수",
-        data: scores,
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 3,
-        pointRadius: 4
-      }]
-    },
+// ── 차트 ─────────────────────────────────────────────────────
+function drawChart(result, type) {
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  const sorted = [...result].sort((a,b) => b.점수 - a.점수);
+  const labels = sorted.map(r => r.가치유형);
+  const scores = sorted.map(r => r.점수);
+  const ctx = document.getElementById("valuesChart").getContext("2d");
+
+  const commonDataset = {
+    label: "가치 점수",
+    data: scores,
+    backgroundColor: type === "radar"
+      ? "rgba(46,125,110,0.18)"
+      : scores.map((_,i) => i===0?"rgba(46,125,110,0.9)":i<3?"rgba(74,173,152,0.7)":"rgba(74,173,152,0.35)"),
+    borderColor: type === "radar"
+      ? "rgba(46,125,110,0.9)"
+      : scores.map((_,i) => i<3?"rgba(46,125,110,1)":"rgba(46,125,110,0.5)"),
+    borderWidth: type === "radar" ? 2 : 1,
+    pointBackgroundColor: "rgba(46,125,110,1)",
+    pointRadius: 3,
+    barThickness: 22
+  };
+
+  const commonScaleStyle = {
+    grid: { color: "rgba(0,0,0,0.05)" },
+    ticks: { font: { family:"Noto Serif KR", size:12 }, color:"#4e4840" }
+  };
+
+  chartInst = new Chart(ctx, {
+    type: type,
+    data: { labels, datasets: [commonDataset] },
     options: {
       responsive: true,
-      layout: { padding: 5 },
-      scales: {
-        r: {
-          min: 0, max: 30,
-          ticks: { stepSize: 5 },
-          pointLabels: { font: { size: 16 } }
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.raw}점` },
+          titleFont: { family:"Noto Serif KR" },
+          bodyFont:  { family:"Noto Serif KR" }
         }
+      },
+      scales: type === "radar" ? {
+        r: {
+          min:0, max:30, ticks:{ stepSize:5, font:{family:"Noto Serif KR",size:10}, color:"#9a9088" },
+          grid:{ color:"rgba(0,0,0,0.06)" },
+          pointLabels:{ font:{family:"Noto Serif KR",size:12}, color:"#4e4840" }
+        }
+      } : {
+        x: commonScaleStyle,
+        y: { ...commonScaleStyle, beginAtZero:true, max:30, ticks:{...commonScaleStyle.ticks, stepSize:5} }
       }
     }
   });
 }
 
-// ── 막대 차트 ────────────────────────────────────────────
-function drawBar(labels, scores) {
-  if (barChartObj) barChartObj.destroy();
-  const ctx = document.getElementById("barChart").getContext("2d");
-  barChartObj = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: "가치 점수",
-        data: scores,
-        backgroundColor: "rgba(75, 192, 192, 0.5)",
-        borderColor: "rgba(75, 192, 192, 1)",
-        borderWidth: 1,
-        barThickness: 25
-      }]
-    },
-    options: {
-      responsive: true,
-      layout: { padding: 40 },
-      scales: {
-        y: { beginAtZero: true, max: 30, ticks: { stepSize: 5 } }
-      }
-    }
-  });
-}
-
-// ── 그래프 전환 ──────────────────────────────────────────
-function changeChartType() {
-  const type = document.getElementById("chartType").value;
-  document.getElementById("radarChart").style.display = (type === "radar") ? "block" : "none";
-  document.getElementById("barChart").style.display   = (type === "bar")   ? "block" : "none";
+function switchChart(type, btn) {
+  document.querySelectorAll(".chart-tab").forEach(t => t.classList.remove("active"));
+  btn.classList.add("active");
+  currentChartType = type;
+  // 현재 결과가 있으면 다시 그리기
+  const rows = document.querySelectorAll(".score-row");
+  if (rows.length) {
+    const scoreData = [...rows].map(row => ({
+      가치유형: row.querySelector(".score-type").textContent.replace(/^[①②③] /,""),
+      점수: parseInt(row.querySelector(".score-val").textContent)
+    }));
+    drawChart(scoreData, type);
+  }
 }
 </script>
 </body>
+
 </html>

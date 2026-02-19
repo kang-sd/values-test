@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가치관 검사</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      padding: 16px;
+      max-width: 900px;
+      margin: auto;
+      background-color: #f7fbff;
+    }
+    h2 {
+      color: #0050a0;
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 24px;
+      padding: 12px;
+      border-bottom: 1px solid #ccc;
+      font-size: 18px;
+    }
+    .btn-choice {
+      display: inline-block;
+      margin-right: 10px;
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #f0f0f0;
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      cursor: pointer;
+      color: black;
+    }
+    .btn-choice.selected {
+      background-color: #007BFF;
+      color: white;
+      border-color: #007BFF;
+    }
+    input[type="text"], button {
+      font-size: 18px;
+      padding: 10px;
+    }
+    button {
+      background-color: #2d7ff9;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #115fd3;
+    }
+    .warning {
+      background-color: #ffdddd;
+      color: #a00;
+      padding: 12px;
+      border: 1px solid #a00;
+      border-radius: 5px;
+      margin: 10px 0;
+      display: none;
+    }
+    .btn-submit {
+      display: block;
+      width: 100%;
+      font-size: 20px;
+      padding: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      margin: 30px 0 10px;
+    }
+    .btn-submit:hover {
+      background-color: #218838;
+    }
+    .loading {
+      text-align: center;
+      font-size: 18px;
+      color: #555;
+      padding: 20px;
+    }
+    @media (max-width: 600px) {
+      .btn-choice {
+        padding: 14px 18px;
+        font-size: 18px;
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+      input[type="text"], button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<h2>가치관 검사</h2>
+
+<!-- 검사 설명 박스 -->
+<div style="background-color: #f0f8ff; border-left: 6px solid #007BFF; padding: 16px; margin-bottom: 20px; border-radius: 8px;">
+  <strong style="font-size: 18px; color: #0050a0;">💡 가치관 검사란?</strong><br>
+  개인이 중요하게 여기는 <strong>12가지 직업 가치유형</strong>을 진단하여,<br>
+  유형별 점수, 평가, 자기개발 팁, 성장 팁, 강점, 약점을 제공합니다.<br>
+  결과는 <strong style="color: #0050a0;">레이더 차트</strong> 및 <strong style="color: #0050a0;">막대그래프</strong>로 시각화됩니다.
+</div>
+
+<div style="background-color: #f8f9fa; border-left: 6px solid #6c757d; padding: 16px; margin-bottom: 30px; border-radius: 8px;">
+  <strong style="font-size: 16px; color: #333;">🔍 검사 유의사항</strong><br>
+  - 본 검사는 유효한 결과를 위해 <strong>60문항</strong>으로 구성합니다<br>
+  - 결과는 <strong>3일간 보관</strong>되며 자동 삭제됩니다<br>
+  - 기존 검사자는 <strong>이름 검색</strong>으로 결과 확인 가능합니다.
+</div>
+
+<!-- 경고 메시지 박스 -->
+<div id="warningBox" class="warning"><span id="warningText"></span></div>
+
+<!-- 이름 입력 -->
+<p>
+  이름: <input type="text" id="nameInput" placeholder="이름을 입력하세요" autocomplete="off">
+  <button onclick="searchPrevious()">검색</button>
+</p>
+
+<div id="searchResponse"></div>
+<div id="loadingBox" class="loading" style="display:none;">⏳ 불러오는 중...</div>
+
+<!-- 문항 출력 폼 -->
+<form id="questionForm"></form>
+
+<!-- 결과보기 버튼 -->
+<button class="btn-submit" onclick="submitAnswers()">결과 보기</button>
+
+<!-- 문항 경고 -->
+<div id="questionWarningBox" class="warning" style="display:none;">
+  <span id="questionWarningText"></span>
+</div>
+
+<!-- 결과 보고서 영역 -->
+<div class="result-box" id="resultSection" style="display:none">
+  <h3>결과 보고서</h3>
+  <table id="resultTable" border="1" style="width:100%; border-collapse:collapse;"></table>
+  <br>
+  <div style="text-align: left; margin-bottom: 10px;">
+    <label for="chartType" style="font-size: 18px; margin-right: 10px;">그래프 선택:</label>
+    <select id="chartType" onchange="changeChartType()" style="font-size: 18px; padding: 5px 10px;">
+      <option value="radar">다각형(레이더차트)</option>
+      <option value="bar">막대그래프</option>
+    </select>
+  </div>
+  <div style="position: relative; width: 80%; margin: auto;">
+    <canvas id="radarChart" style="width:100%; height:260px; background-color:white; display:block;"></canvas>
+    <canvas id="barChart"   style="width:100%; height:260px; background-color:white; display:none;"></canvas>
+  </div>
+  <br><br>
+  <button onclick="location.reload()">🔁 나가기</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// Firebase Functions 엔드포인트 (배포 후 자동 생성된 URL로 교체)
+// 형식: https://us-central1-values-test-31b59.cloudfunctions.net/함수명
+// ════════════════════════════════════════════════════════════
+const BASE_URL = "https://us-central1-values-test-31b59.cloudfunctions.net";
+
+let questions = [], answers = {}, lastSearchResult = null, currentUserName = "";
+let radarChartObj = null, barChartObj = null;
+
+// ── API 헬퍼 ──────────────────────────────────────────────
+async function apiPost(endpoint, body = {}) {
+  const res = await fetch(`${BASE_URL}/${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`API 오류: ${res.status}`);
+  return res.json();
+}
+
+// ── 페이지 로드 시 문항 불러오기 ────────────────────────────
+window.onload = async () => {
+  showLoading(true);
+  try {
+    const data = await fetch(`${BASE_URL}/getQuestions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(r => r.json());
+    renderQuestions(data.questions || []);
+  } catch (e) {
+    showWarning("문항을 불러오지 못했습니다: " + e.message);
+  } finally {
+    showLoading(false);
+  }
+};
+
+// ── 이름 검색 ────────────────────────────────────────────
+async function searchPrevious() {
+  const name = document.getElementById("nameInput").value.trim();
+  if (!name) return showWarning("이름을 입력해주세요.");
+  currentUserName = name;
+
+  showLoading(true);
+  try {
+    const data = await apiPost("getUserResult", { name });
+    lastSearchResult = data.found ? data.result : null;
+    const box = document.getElementById("searchResponse");
+
+    if (data.found) {
+      box.innerHTML = `
+        <div class='confirm-box'>
+          이전에 검사를 했습니다. 결과를 보시겠습니까?<br>
+          <button onclick='confirmLoadResult(true)'>예</button>
+          <button onclick='confirmLoadResult(false)'>아니오</button>
+        </div>`;
+    } else {
+      box.innerHTML = `
+        <div class='confirm-box'>
+          검사를 진행하시겠습니까?<br>
+          <button onclick='confirmLoadResult(true, true)'>예</button>
+          <button onclick='confirmLoadResult(false)'>아니오</button>
+        </div>`;
+    }
+  } catch (e) {
+    showWarning("검색 중 오류: " + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ── 검색 결과 확인 ───────────────────────────────────────
+function confirmLoadResult(ok, isNew = false) {
+  const responseBox = document.getElementById("searchResponse");
+  if (ok && lastSearchResult) {
+    responseBox.innerHTML = "";
+    renderResult(lastSearchResult);
+    document.getElementById("resultSection").scrollIntoView({ behavior: 'smooth' });
+  } else if (ok && isNew) {
+    responseBox.innerHTML = "";
+    document.getElementById("warningBox").style.display = "none";
+  } else {
+    location.reload();
+  }
+}
+
+// ── 문항 렌더링 ──────────────────────────────────────────
+function renderQuestions(data) {
+  questions = data;
+  const form = document.getElementById("questionForm");
+  form.innerHTML = "";
+  data.forEach((q, i) => {
+    const div = document.createElement("div");
+    div.className = "question";
+    let html = `<p>${i + 1}. ${q.text}</p>`;
+    for (let j = 1; j <= 5; j++) {
+      const label = q[`select${j}`];
+      const score = q[`score${j}`];
+      if (!label) continue;
+      html += `<button type='button' class='btn-choice' onclick='selectAnswer("${q.id}", ${score}, this)'>${label}</button>`;
+    }
+    div.innerHTML = html;
+    form.appendChild(div);
+  });
+}
+
+// ── 답변 선택 ────────────────────────────────────────────
+function selectAnswer(qid, score, btn) {
+  answers[qid] = score;
+  const group = btn.parentElement.querySelectorAll(".btn-choice");
+  group.forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+}
+
+// ── 답변 제출 ────────────────────────────────────────────
+async function submitAnswers() {
+  const name = document.getElementById("nameInput").value.trim();
+  if (!name) return showWarning("이름을 입력해주세요.");
+  currentUserName = name;
+
+  const unanswered = questions.filter(q => answers[q.id] === undefined);
+  if (unanswered.length) {
+    const missing = unanswered.map(q => q.id).join(", ");
+    showWarning(`다음 문항이 입력되지 않았습니다: ${missing}. 문항을 모두 입력해야 결과를 확인할 수 있습니다.`);
+    return;
+  }
+
+  document.getElementById("questionWarningBox").style.display = "none";
+  showLoading(true);
+
+  try {
+    const data = await apiPost("saveAnswers", { name, answers });
+    renderResult(data.result);
+    setTimeout(() => {
+      document.getElementById("resultSection").scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  } catch (e) {
+    showWarning("제출 중 오류: " + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ── 경고 표시 ────────────────────────────────────────────
+function showWarning(msg) {
+  const box = document.getElementById("warningBox");
+  document.getElementById("warningText").textContent = msg;
+  box.style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showLoading(show) {
+  document.getElementById("loadingBox").style.display = show ? "block" : "none";
+}
+
+// ── 결과 렌더링 ──────────────────────────────────────────
+function renderResult(result) {
+  if (!result || !Array.isArray(result)) return showWarning("결과 데이터가 없습니다.");
+  document.getElementById("resultSection").style.display = "block";
+  const table = document.getElementById("resultTable");
+
+  let html = `
+    <tr>
+      <th style="width:7%;  text-align:center;">가치유형</th>
+      <th style="width:5%;  text-align:center;">점수</th>
+      <th style="width:22%; text-align:center;">평가</th>
+      <th style="width:22%;">자기개발 팁</th>
+      <th style="width:22%;">성장 팁</th>
+      <th style="width:22%;">강점/약점</th>
+    </tr>`;
+
+  const labels = [], scores = [];
+  result.forEach(row => {
+    html += `
+      <tr>
+        <td style="text-align:center;">${row.가치유형}</td>
+        <td style="text-align:center;">${row.점수}</td>
+        <td>${row.평가}</td>
+        <td>${row.자기개발팁}</td>
+        <td>${row.성장팁}</td>
+        <td>${row.강점} / ${row.약점}</td>
+      </tr>`;
+    labels.push(row.가치유형);
+    scores.push(row.점수);
+  });
+
+  table.innerHTML = html;
+  drawRadar(labels, scores);
+  drawBar(labels, scores);
+}
+
+// ── 레이더 차트 ──────────────────────────────────────────
+function drawRadar(labels, scores) {
+  if (radarChartObj) radarChartObj.destroy();
+  const ctx = document.getElementById("radarChart").getContext("2d");
+  radarChartObj = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [{
+        label: "가치 점수",
+        data: scores,
+        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        borderColor: "rgba(54, 162, 235, 1)",
+        borderWidth: 3,
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      layout: { padding: 5 },
+      scales: {
+        r: {
+          min: 0, max: 30,
+          ticks: { stepSize: 5 },
+          pointLabels: { font: { size: 16 } }
+        }
+      }
+    }
+  });
+}
+
+// ── 막대 차트 ────────────────────────────────────────────
+function drawBar(labels, scores) {
+  if (barChartObj) barChartObj.destroy();
+  const ctx = document.getElementById("barChart").getContext("2d");
+  barChartObj = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: "가치 점수",
+        data: scores,
+        backgroundColor: "rgba(75, 192, 192, 0.5)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        borderWidth: 1,
+        barThickness: 25
+      }]
+    },
+    options: {
+      responsive: true,
+      layout: { padding: 40 },
+      scales: {
+        y: { beginAtZero: true, max: 30, ticks: { stepSize: 5 } }
+      }
+    }
+  });
+}
+
+// ── 그래프 전환 ──────────────────────────────────────────
+function changeChartType() {
+  const type = document.getElementById("chartType").value;
+  document.getElementById("radarChart").style.display = (type === "radar") ? "block" : "none";
+  document.getElementById("barChart").style.display   = (type === "bar")   ? "block" : "none";
+}
+</script>
+</body>
+</html>
